@@ -29,8 +29,7 @@ void setup() {
   pinMode(ch1CurrentSetPin, OUTPUT);
   pinMode(charge_EN1_Pin, OUTPUT);
 
-  EEPROM.get(ch1CurrentSetValAddress, ch1CurrentSetVal);
-  EEPROM.get(charge1ENAddress, charge1EN);
+  getConfigData();
 }
 
 void loop() {
@@ -92,7 +91,15 @@ void getData(){
     charge1EN = dataString.toInt();
 
     ch1CurrentSetVal = (ch1CurrentSetVal / 1000.0 + 0.008505) / (2.0 * 0.017686);     /*ch1CurrentSetVal is in mA, convert to PWM int value*/
+    storeConfigData();
+}
 
+void storeConfigData(){
     EEPROM.put(ch1CurrentSetValAddress, ch1CurrentSetVal);                            /*store values in EEPROM*/
     EEPROM.put(charge1ENAddress, charge1EN);
+}
+
+void getConfigData(){
+    EEPROM.get(ch1CurrentSetValAddress, ch1CurrentSetVal);
+    EEPROM.get(charge1ENAddress, charge1EN);
 }
