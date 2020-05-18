@@ -11,11 +11,12 @@ byte ch1CurrentSetPin = 3;
 double batt1Voltage;
 double LPF_Cal_Voltage;
 boolean calModeEN;
-int prev_ch1CurrentSetVal;
-int ch1CurrentSetVal;
+byte prev_ch1CurrentPWM;
+byte ch1CurrentPWM;
+float ch1Current;
 byte ch1DualSelect;
 
-byte ch1CurrentSetValAddress = 0;                             /*EEPROM Addresses*/
+byte ch1CurrentAddress = 0;                             /*EEPROM Addresses*/
 byte ch1DualSelectAddress = 2;
 
 
@@ -38,10 +39,10 @@ void loop() {
     LPF_Cal_Voltage = analogRead(LPF_Cal_Pin);
   }
   
-  if(ch1CurrentSetVal != prev_ch1CurrentSetVal)                                       /*if channel 1 current set value is different, write the value*/
+  if(ch1CurrentPWM != prev_ch1CurrentPWM)                                       /*if channel 1 current set value is different, write the value*/
   {
-    analogWrite(ch1CurrentSetPin, ch1CurrentSetVal);
-    prev_ch1CurrentSetVal = ch1CurrentSetVal;
+    analogWrite(ch1CurrentSetPin, ch1CurrentPWM);
+    prev_ch1CurrentPWM = ch1CurrentPWM;
   }
   
   if(Serial.available() > 0){                                                         /*if there is data from the serial monitor, recieve it*/
@@ -57,36 +58,35 @@ void loop() {
 
 void computeSetValues(){
   if(ch1DualSelect){
-    ch1CurrentSetVal = (ch1CurrentSetVal / 1000.0 + 0.008505) / (2.0 * 0.017686);     /*ch1CurrentSetVal is in mA, convert to PWM int value*/
+    ch1CurrentPWM = (ch1Current / 1000.0 + 0.008505) / (2.0 * 0.017686);     /*ch1Current is in mA, convert to PWM int value*/
   }
   else{
-    ch1CurrentSetVal = (ch1CurrentSetVal / 1000.0 + 0.008505) / (0.017686);           /*ch1CurrentSetVal is in mA, convert to PWM int value for single channel (2x voltage)*/
+    ch1CurrentPWM = (ch1Current / 1000.0 + 0.008505) / (0.017686);           /*ch1Current is in mA, convert to PWM int value for single channel (2x voltage)*/
   }
   storeConfigData();                                                                /*if new setpoints are recieved, store them in EEPROM*/
 }
 
 void sendData(){
-    Serial.print(batt1Voltage, 2); Serial.print(":"); 
-    Serial.print(((LPF_Cal_Voltage * 5.0) / 1023.0),4); Serial.print(":");                /*print the feedback ADC Value as a voltage*/
+    Serial.print(batt1Voltage, 2); Serial.print(":");     
     Serial.print(ch1DualSelect); Serial.print(":");
-    Serial.println(ch1CurrentSetVal);
+    Serial.print(ch1Current); Serial.print(":");
+    Serial.println(ch1CurrentPWM);
 }
 
 void getData(){      
     //the incoming data is formatted:     
     String dataString = Serial.readStringUntil(':');                                  /*parse the string until the seperator '&' is found*/
-    prev_ch1CurrentSetVal = ch1CurrentSetVal;
-    ch1CurrentSetVal = dataString.toInt();                                            /*convert that string into an integar*/
+    ch1Current = dataString.toInt();                                            /*convert that string into an integar*/
     dataString = Serial.readStringUntil(':');
     ch1DualSelect = dataString.toInt();    
 }
 
 void storeConfigData(){
-    EEPROM.put(ch1CurrentSetValAddress, ch1CurrentSetVal);                            /*store values in EEPROM*/
+    EEPROM.put(ch1CurrentAddress, ch1CurrentPWM);                            /*store values in EEPROM*/
     EEPROM.put(ch1DualSelectAddress, ch1DualSelect);
 }
 
 void getConfigData(){
-    EEPROM.get(ch1CurrentSetValAddress, ch1CurrentSetVal);
+    EEPROM.get(ch1CurrentAddress, ch1CurrentPWM);
     EEPROM.get(ch1DualSelectAddress, ch1DualSelect);
 }
