@@ -13,9 +13,10 @@ double LPF_Cal_Voltage;
 boolean calModeEN;
 int prev_ch1CurrentSetVal;
 int ch1CurrentSetVal;
+byte ch1DualSelect;
 
 byte ch1CurrentSetValAddress = 0;                             /*EEPROM Addresses*/
-byte charge1ENAddress = 2;
+byte ch1DualSelectAddress = 2;
 
 
 void setup() {
@@ -48,13 +49,16 @@ void loop() {
   }
   else                                                                                /*otherwise, send the current data*/
   {
-    //LPF_Cal_Voltage = LPF_Cal_Voltage                                               /*convert lpf feedback into voltage*/
-    Serial.print(batt1Voltage, 2); Serial.print(":"); 
-    Serial.print(((LPF_Cal_Voltage * 5.0) / 1023.0),4); Serial.print(":");                /*print the feedback ADC Value as a voltage*/
-    Serial.print(calModeEN); Serial.print(":");
-    Serial.println(ch1CurrentSetVal);
+    sendData();    
   }
   delay(100);
+}
+
+void sendData(){
+    Serial.print(batt1Voltage, 2); Serial.print(":"); 
+    Serial.print(((LPF_Cal_Voltage * 5.0) / 1023.0),4); Serial.print(":");                /*print the feedback ADC Value as a voltage*/
+    Serial.print(ch1DualSelect); Serial.print(":");
+    Serial.println(ch1CurrentSetVal);
 }
 
 void getData(){      
@@ -63,7 +67,7 @@ void getData(){
     prev_ch1CurrentSetVal = ch1CurrentSetVal;
     ch1CurrentSetVal = dataString.toInt();                                            /*convert that string into an integar*/
     dataString = Serial.readStringUntil(':');
-    //charge1EN = dataString.toInt();
+    ch1DualSelect = dataString.toInt();
 
     ch1CurrentSetVal = (ch1CurrentSetVal / 1000.0 + 0.008505) / (2.0 * 0.017686);     /*ch1CurrentSetVal is in mA, convert to PWM int value*/
     storeConfigData();                                                                /*if new setpoints are recieved, store them in EEPROM*/
@@ -71,8 +75,10 @@ void getData(){
 
 void storeConfigData(){
     EEPROM.put(ch1CurrentSetValAddress, ch1CurrentSetVal);                            /*store values in EEPROM*/
+    EEPROM.put(ch1DualSelectAddress, ch1DualSelect);
 }
 
 void getConfigData(){
     EEPROM.get(ch1CurrentSetValAddress, ch1CurrentSetVal);
+    EEPROM.get(ch1DualSelectAddress, ch1DualSelect);
 }
