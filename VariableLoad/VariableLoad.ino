@@ -46,12 +46,23 @@ void loop() {
   
   if(Serial.available() > 0){                                                         /*if there is data from the serial monitor, recieve it*/
     getData();
+    computeSetValues();
   }
   else                                                                                /*otherwise, send the current data*/
   {
     sendData();    
   }
   delay(100);
+}
+
+void computeSetValues(){
+  if(ch1DualSelect){
+    ch1CurrentSetVal = (ch1CurrentSetVal / 1000.0 + 0.008505) / (2.0 * 0.017686);     /*ch1CurrentSetVal is in mA, convert to PWM int value*/
+  }
+  else{
+    ch1CurrentSetVal = (ch1CurrentSetVal / 1000.0 + 0.008505) / (0.017686);           /*ch1CurrentSetVal is in mA, convert to PWM int value for single channel (2x voltage)*/
+  }
+  storeConfigData();                                                                /*if new setpoints are recieved, store them in EEPROM*/
 }
 
 void sendData(){
@@ -67,10 +78,7 @@ void getData(){
     prev_ch1CurrentSetVal = ch1CurrentSetVal;
     ch1CurrentSetVal = dataString.toInt();                                            /*convert that string into an integar*/
     dataString = Serial.readStringUntil(':');
-    ch1DualSelect = dataString.toInt();
-
-    ch1CurrentSetVal = (ch1CurrentSetVal / 1000.0 + 0.008505) / (2.0 * 0.017686);     /*ch1CurrentSetVal is in mA, convert to PWM int value*/
-    storeConfigData();                                                                /*if new setpoints are recieved, store them in EEPROM*/
+    ch1DualSelect = dataString.toInt();    
 }
 
 void storeConfigData(){
