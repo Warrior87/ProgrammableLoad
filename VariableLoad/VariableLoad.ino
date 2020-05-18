@@ -53,14 +53,6 @@ void loop() {
     Serial.print(((LPF_Cal_Voltage * 5.0) / 1023.0),4); Serial.print(":");                /*print the feedback ADC Value as a voltage*/
     Serial.print(calModeEN); Serial.print(":");
     Serial.println(ch1CurrentSetVal);
-
-//    Serial.print(random(0,1023)); Serial.print(":"); 
-//    Serial.print(random(0,1023)); Serial.print(":");
-//    Serial.println(1);
-
-//    Serial.print(ch1CurrentSetVal); Serial.print(":"); 
-//    Serial.print(charge1EN); Serial.print(":");
-//    Serial.println(calModeEN);
   }
   delay(100);
 }
