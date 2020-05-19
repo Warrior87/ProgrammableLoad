@@ -51,11 +51,6 @@ void loop() {
   batt1Voltage = analogRead(batt1_Pin);
   batt1Voltage = (batt1Voltage * 5.0) / 1023.0;                                       /*convert batt1Voltage from ADC value to Voltage*/
   
-  if(calModeEN)                                                                       /*if calibration mode is enabled, get the calibration pin value*/
-  {
-    LPF_Cal_Voltage = analogRead(LPF_Cal_Pin);
-  }
-  
   if(ch1CurrentPWM != prev_ch1CurrentPWM)                                       /*if channel 1 current set value is different, write the value*/
   {
     analogWrite(ch1CurrentSetPin, ch1CurrentPWM);
