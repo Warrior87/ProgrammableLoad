@@ -16,7 +16,8 @@ const double PWMVoltage[] PROGMEM = {0,0.0093,0.0249,0.0464,0.0616,0.0821,0.0963
 3.306,3.3089,3.3358,3.3485,3.3631,3.3886,3.3969,3.4262,3.4321,3.458,3.4697,3.4888,3.5112,3.523,3.5489,3.5552,
 3.5846,3.5943,3.6158,3.6315,3.6461,3.6696,3.6804,3.7058,3.7155,3.741,3.7522,3.7713,3.7918,3.8035,3.8299,3.8397,
 3.8646,3.8763,3.8964,3.9154,3.9286,3.9531,3.9638,3.9853,4.0005,4.0161,4.0371,4.0508,4.0738,4.0865,4.108,4.1212,
-4.1437,4.1608,4.1755,4.196,4.2116,4.2326,4.2463,4.2644,4.2825,4.3011,4.3182,4.3372,4.3553,4.3715,4.3905,4.4062,4.4272,4.4423,4.4589,4.4809,4.4961};
+4.1437,4.1608,4.1755,4.196,4.2116,4.2326,4.2463,4.2644,4.2825,4.3011,4.3182,4.3372,4.3553,4.3715,4.3905,4.4062,
+4.4272,4.4423,4.4589,4.4809,4.4961};
 
 byte cal_Mode_Pin = 12;
 byte LPF_Cal_Pin = 0;
@@ -29,6 +30,7 @@ boolean calModeEN;
 byte prev_ch1CurrentPWM;
 byte ch1CurrentPWM;
 double ch1Current;
+double ch1ActualCurrent;
 byte ch1DualSelect;
 
 byte ch1CurrentAddress = 0;                             /*EEPROM Addresses*/
@@ -74,9 +76,13 @@ void loop() {
 void computeSetValues(){
   if(ch1DualSelect){
     ch1CurrentPWM = (ch1Current / 1000.0 + 0.008505) / (2.0 * 0.017686);     /*ch1Current is in mA, convert to PWM int value*/
+    ch1Current = PWMVoltage[ch1CurrentPWM];                                  /*lookup filter voltage value*/
+    ch1ActualCurrent = ch1Current / 0.25;                                    /*calculate actual current set value (0.5 ohm in parallel)*/
   }
   else{
     ch1CurrentPWM = (ch1Current / 1000.0 + 0.008505) / (0.017686);           /*ch1Current is in mA, convert to PWM int value for single channel (2x voltage)*/
+    ch1Current = PWMVoltage[ch1CurrentPWM];                                  /*lookup filter voltage value*/
+    ch1ActualCurrent = ch1Current / 0.5;                                    /*calculate actual current set value (0.5 ohm in parallel)*/
   }
   storeConfigData();                                                                /*if new setpoints are recieved, store them in EEPROM*/
 }
