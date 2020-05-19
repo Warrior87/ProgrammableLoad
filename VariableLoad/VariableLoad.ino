@@ -57,9 +57,11 @@ void loop() {
   if(ch1Enable)
   {
     analogWrite(ch1CurrentSetPin, ch1CurrentPWM);
+    ch1Power = ch1ActualCurrent * ch1Voltage;                                 /*calculate channel power*/
   }
   else{                                                                         /*if channel 1 is disabled, set PWM to 0*/
     analogWrite(ch1CurrentSetPin, 0);
+    ch1Power = 0;
   }
   
   if(Serial.available() > 0){                                                         /*if there is data from the serial monitor, recieve it*/
@@ -82,7 +84,6 @@ void computeSetValues(){
   else{
     ch1ActualCurrent = ch1Current * 2000;                                    /*calculate actual current set value (x * 1000 / 0.5)*/
   }
-  ch1Power = ch1ActualCurrent * ch1Voltage;                                 /*calculate channel power*/
   storeConfigData();                                                                /*if new setpoints are recieved, store them in EEPROM*/
 }
 
