@@ -21,7 +21,7 @@ const double PWMVoltage[] = {0,0.0093,0.0249,0.0464,0.0616,0.0821,0.0963,0.1163,
 
 byte cal_Mode_Pin = 12;
 byte LPF_Cal_Pin = 0;
-byte batt1_Pin = 1;
+byte ch1_Pin = 1;
 byte ch1CurrentSetPin = 3;
 
 double ch1Voltage;
@@ -50,7 +50,7 @@ void setup() {
 
 void loop() {
 
-  ch1Voltage = analogRead(batt1_Pin);
+  ch1Voltage = analogRead(ch1_Pin);
   ch1Voltage = (ch1Voltage * 5.0) / 1023.0;                                       /*convert ch1Voltage from ADC value to Voltage*/
   
   if(ch1CurrentPWM != prev_ch1CurrentPWM)                                       /*if channel 1 current set value is different, write the value*/
