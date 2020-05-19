@@ -30,10 +30,11 @@ boolean calModeEN;
 byte prev_ch1CurrentPWM;
 byte ch1CurrentPWM;
 double ch1Current;
-double ch1ActualCurrent;
+unsigned int ch1ActualCurrent;
 double ch1Power;
 byte ch1DualSelect;
 byte ch1Enable;
+double ch1PWMVoltage;
 
 byte ch1CurrentAddress = 0;                             /*EEPROM Addresses*/
 byte ch1DualSelectAddress = 2;
@@ -75,15 +76,35 @@ void loop() {
   delay(100);
 }
 
-void computeSetValues(){
-  ch1CurrentPWM = (ch1Current / 1000.0 + 0.008505) / (2.0 * 0.017686) + 1;     /*ch1Current is in mA, convert to PWM int value*/
-  ch1Current = pgm_read_float(&PWMVoltage[ch1CurrentPWM]);                                  /*lookup filter voltage value*/
-  if(ch1DualSelect){
-    ch1ActualCurrent = ch1Current * 4000;                                    /*calculate actual current set value (0.5 ohm in parallel) (x * 1000 / 0.25)*/
+byte computePWM(double chCurrent){
+  byte chCurrentPWM;
+  chCurrentPWM = (chCurrent / 1000.0 + 0.008505) / (2.0 * 0.017686) + 1;     /*ch1Current is in mA, convert to PWM int value*/
+  return chCurrentPWM;
+}
+
+unsigned int computeActualCurrent(byte chCurrentPWM, byte chDualSelect){
+  double chPWMVoltage;
+  unsigned int chActualCurrent;
+  chPWMVoltage = pgm_read_float(&PWMVoltage[chCurrentPWM]);                                  /*lookup filter voltage value*/
+  if(chDualSelect){
+    chActualCurrent = chPWMVoltage * 4000;                                    /*calculate actual current set value (0.5 ohm in parallel) (x * 1000 / 0.25)*/
   }
   else{
-    ch1ActualCurrent = ch1Current * 2000;                                    /*calculate actual current set value (x * 1000 / 0.5)*/
+    chActualCurrent = chPWMVoltage * 2000;                                    /*calculate actual current set value (x * 1000 / 0.5)*/
   }
+  return chActualCurrent;
+}
+
+void computeSetValues(){
+  ch1CurrentPWM = computePWM(ch1Current);
+  //ch1PWMVoltage = pgm_read_float(&PWMVoltage[ch1CurrentPWM]);                                  /*lookup filter voltage value*/
+//  if(ch1DualSelect){
+//    ch1ActualCurrent = ch1PWMVoltage * 4000;                                    /*calculate actual current set value (0.5 ohm in parallel) (x * 1000 / 0.25)*/
+//  }
+//  else{
+//    ch1ActualCurrent = ch1PWMVoltage * 2000;                                    /*calculate actual current set value (x * 1000 / 0.5)*/
+//  }
+  ch1ActualCurrent = computeActualCurrent(ch1CurrentPWM, ch1DualSelect);
   storeConfigData();                                                                /*if new setpoints are recieved, store them in EEPROM*/
 }
 
