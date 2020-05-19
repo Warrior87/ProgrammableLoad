@@ -33,6 +33,7 @@ double ch1Current;
 double ch1ActualCurrent;
 double ch1Power;
 byte ch1DualSelect;
+byte ch1Enable;
 
 byte ch1CurrentAddress = 0;                             /*EEPROM Addresses*/
 byte ch1DualSelectAddress = 2;
@@ -53,10 +54,12 @@ void loop() {
   ch1Voltage = analogRead(ch1_Pin);
   ch1Voltage = (ch1Voltage * 5.0) / 1023.0;                                       /*convert ch1Voltage from ADC value to Voltage*/
   
-  if(ch1CurrentPWM != prev_ch1CurrentPWM)                                       /*if channel 1 current set value is different, write the value*/
+  if(ch1Enable)
   {
     analogWrite(ch1CurrentSetPin, ch1CurrentPWM);
-    prev_ch1CurrentPWM = ch1CurrentPWM;
+  }
+  else{                                                                         /*if channel 1 is disabled, set PWM to 0*/
+    analogWrite(ch1CurrentSetPin, 0);
   }
   
   if(Serial.available() > 0){                                                         /*if there is data from the serial monitor, recieve it*/
@@ -96,6 +99,8 @@ void getData(){
     ch1Current = dataString.toInt();                                            /*convert that string into an integar*/
     dataString = Serial.readStringUntil(':');
     ch1DualSelect = dataString.toInt();    
+    dataString = Serial.readStringUntil(':');
+    ch1Enable = dataString.toInt();  
 }
 
 void storeConfigData(){
