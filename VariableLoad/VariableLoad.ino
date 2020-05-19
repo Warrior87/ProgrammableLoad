@@ -1,7 +1,7 @@
 #include <EEPROM.h>
 #include <avr/pgmspace.h>
 
-const double PWMVoltage[] = {0,0.0093,0.0249,0.0464,0.0616,0.0821,0.0963,0.1163,0.1344,0.1491,0.1691,
+const double PWMVoltage[] PROGMEM = {0,0.0093,0.0249,0.0464,0.0616,0.0821,0.0963,0.1163,0.1344,0.1491,0.1691,
 0.1852,0.2043,0.2209,0.238,0.2605,0.2717,0.2947,0.3084,0.327,0.3436,0.3627,0.3783,0.3959,0.4169,0.4306,0.4531,
 0.4658,0.4868,0.5029,0.5196,0.5401,0.5547,0.5753,0.587,0.6129,0.6241,0.6457,0.6628,0.6784,0.6989,0.7141,0.737,
 0.7458,0.7727,0.7845,0.8045,0.824,0.8348,0.8597,0.8685,0.8954,0.9037,0.9306,0.9413,0.9629,0.9824,0.9941,1.0205,
@@ -76,8 +76,8 @@ void loop() {
 }
 
 void computeSetValues(){
-  ch1CurrentPWM = (ch1Current / 1000.0 + 0.008505) / (2.0 * 0.017686);     /*ch1Current is in mA, convert to PWM int value*/
-  ch1Current = PWMVoltage[ch1CurrentPWM];                                  /*lookup filter voltage value*/
+  ch1CurrentPWM = (ch1Current / 1000.0 + 0.008505) / (2.0 * 0.017686) + 1;     /*ch1Current is in mA, convert to PWM int value*/
+  ch1Current = pgm_read_float(&PWMVoltage[ch1CurrentPWM]);                                  /*lookup filter voltage value*/
   if(ch1DualSelect){
     ch1ActualCurrent = ch1Current * 4000;                                    /*calculate actual current set value (0.5 ohm in parallel) (x * 1000 / 0.25)*/
   }
