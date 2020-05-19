@@ -52,18 +52,22 @@ void setup() {
 
 void loop() {
 
-  ch1Voltage = analogRead(ch1_Pin);
-  ch1Voltage = (ch1Voltage * 5.0) / 1023.0;                                       /*convert ch1Voltage from ADC value to Voltage*/
-  
-  if(ch1Enable)
-  {
-    analogWrite(ch1CurrentSetPin, ch1CurrentPWM);
-    ch1Power = ch1ActualCurrent * ch1Voltage;                                 /*calculate channel power*/
-  }
-  else{                                                                         /*if channel 1 is disabled, set PWM to 0*/
-    analogWrite(ch1CurrentSetPin, 0);
-    ch1Power = 0;
-  }
+//  ch1Voltage = analogRead(ch1_Pin);
+//  ch1Voltage = (ch1Voltage * 5.0) / 1023.0;                                       /*convert ch1Voltage from ADC value to Voltage*/
+//  
+//  if(ch1Enable)
+//  {
+//    analogWrite(ch1CurrentSetPin, ch1CurrentPWM);
+//    ch1Power = ch1ActualCurrent * ch1Voltage;                                 /*calculate channel power*/
+//  }
+//  else{                                                                         /*if channel 1 is disabled, set PWM to 0*/
+//    analogWrite(ch1CurrentSetPin, 0);
+//    ch1Power = 0;
+//  }
+
+  channelDrive(ch1CurrentSetPin, ch1CurrentPWM, ch1Enable);
+  ch1Voltage = getChannelVoltage(ch1_Pin);
+  ch1Power = computeChannelPower(ch1ActualCurrent, ch1Enable, ch1Voltage);
   
   if(Serial.available() > 0){                                                         /*if there is data from the serial monitor, recieve it*/
     getData();
@@ -76,34 +80,36 @@ void loop() {
   delay(100);
 }
 
-byte computePWM(double chCurrent){
-  byte chCurrentPWM;
-  chCurrentPWM = (chCurrent / 1000.0 + 0.008505) / (2.0 * 0.017686) + 1;     /*ch1Current is in mA, convert to PWM int value*/
-  return chCurrentPWM;
+double getChannelVoltage(byte ch_Pin){ 
+  double chVoltage; 
+  chVoltage = analogRead(ch_Pin);
+  chVoltage = (chVoltage * 5.0) / 1023.0;                                       /*convert ch1Voltage from ADC value to Voltage*/
+  return chVoltage;
 }
 
-unsigned int computeActualCurrent(byte chCurrentPWM, byte chDualSelect){
-  double chPWMVoltage;
-  unsigned int chActualCurrent;
-  chPWMVoltage = pgm_read_float(&PWMVoltage[chCurrentPWM]);                                  /*lookup filter voltage value*/
-  if(chDualSelect){
-    chActualCurrent = chPWMVoltage * 4000;                                    /*calculate actual current set value (0.5 ohm in parallel) (x * 1000 / 0.25)*/
+void channelDrive(byte chCurrentSetPin, byte chCurrentPWM, byte chEnable){
+  if(chEnable){
+    analogWrite(chCurrentSetPin, chCurrentPWM);
   }
   else{
-    chActualCurrent = chPWMVoltage * 2000;                                    /*calculate actual current set value (x * 1000 / 0.5)*/
+    analogWrite(chCurrentSetPin, 0);
   }
-  return chActualCurrent;
+}
+
+double computeChannelPower(unsigned int chActualCurrent, byte chEnable, double chVoltage){
+  double chPower;
+  
+  if(chEnable){
+    chPower = chActualCurrent * chVoltage; 
+  }
+  else{
+    chPower = 0;
+  }
+  return chPower;
 }
 
 void computeSetValues(){
   ch1CurrentPWM = computePWM(ch1Current);
-  //ch1PWMVoltage = pgm_read_float(&PWMVoltage[ch1CurrentPWM]);                                  /*lookup filter voltage value*/
-//  if(ch1DualSelect){
-//    ch1ActualCurrent = ch1PWMVoltage * 4000;                                    /*calculate actual current set value (0.5 ohm in parallel) (x * 1000 / 0.25)*/
-//  }
-//  else{
-//    ch1ActualCurrent = ch1PWMVoltage * 2000;                                    /*calculate actual current set value (x * 1000 / 0.5)*/
-//  }
   ch1ActualCurrent = computeActualCurrent(ch1CurrentPWM, ch1DualSelect);
   storeConfigData();                                                                /*if new setpoints are recieved, store them in EEPROM*/
 }
@@ -133,4 +139,23 @@ void storeConfigData(){
 void getConfigData(){
     EEPROM.get(ch1CurrentAddress, ch1CurrentPWM);
     EEPROM.get(ch1DualSelectAddress, ch1DualSelect);
+}
+
+byte computePWM(double chCurrent){
+  byte chCurrentPWM;
+  chCurrentPWM = (chCurrent / 1000.0 + 0.008505) / (2.0 * 0.017686) + 1;     /*ch1Current is in mA, convert to PWM int value*/
+  return chCurrentPWM;
+}
+
+unsigned int computeActualCurrent(byte chCurrentPWM, byte chDualSelect){
+  double chPWMVoltage;
+  unsigned int chActualCurrent;
+  chPWMVoltage = pgm_read_float(&PWMVoltage[chCurrentPWM]);                                  /*lookup filter voltage value*/
+  if(chDualSelect){
+    chActualCurrent = chPWMVoltage * 4000;                                    /*calculate actual current set value (0.5 ohm in parallel) (x * 1000 / 0.25)*/
+  }
+  else{
+    chActualCurrent = chPWMVoltage * 2000;                                    /*calculate actual current set value (x * 1000 / 0.5)*/
+  }
+  return chActualCurrent;
 }
