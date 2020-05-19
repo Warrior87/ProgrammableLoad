@@ -1,6 +1,5 @@
-/*TO DO*/
-
 #include <EEPROM.h>
+#include <avr/pgmspace.h>
 
 
 byte cal_Mode_Pin = 12;
@@ -13,7 +12,7 @@ double LPF_Cal_Voltage;
 boolean calModeEN;
 byte prev_ch1CurrentPWM;
 byte ch1CurrentPWM;
-float ch1Current;
+double ch1Current;
 byte ch1DualSelect;
 
 byte ch1CurrentAddress = 0;                             /*EEPROM Addresses*/
