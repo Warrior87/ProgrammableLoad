@@ -24,13 +24,14 @@ byte LPF_Cal_Pin = 0;
 byte batt1_Pin = 1;
 byte ch1CurrentSetPin = 3;
 
-double batt1Voltage;
+double ch1Voltage;
 double LPF_Cal_Voltage;
 boolean calModeEN;
 byte prev_ch1CurrentPWM;
 byte ch1CurrentPWM;
 double ch1Current;
 double ch1ActualCurrent;
+double ch1Power;
 byte ch1DualSelect;
 
 byte ch1CurrentAddress = 0;                             /*EEPROM Addresses*/
@@ -44,12 +45,13 @@ void setup() {
   pinMode(ch1CurrentSetPin, OUTPUT);
 
   getConfigData();
+  analogWrite(ch1CurrentSetPin, ch1CurrentPWM);
 }
 
 void loop() {
 
-  batt1Voltage = analogRead(batt1_Pin);
-  batt1Voltage = (batt1Voltage * 5.0) / 1023.0;                                       /*convert batt1Voltage from ADC value to Voltage*/
+  ch1Voltage = analogRead(batt1_Pin);
+  ch1Voltage = (ch1Voltage * 5.0) / 1023.0;                                       /*convert ch1Voltage from ADC value to Voltage*/
   
   if(ch1CurrentPWM != prev_ch1CurrentPWM)                                       /*if channel 1 current set value is different, write the value*/
   {
@@ -72,20 +74,21 @@ void computeSetValues(){
   if(ch1DualSelect){
     ch1CurrentPWM = (ch1Current / 1000.0 + 0.008505) / (2.0 * 0.017686);     /*ch1Current is in mA, convert to PWM int value*/
     ch1Current = PWMVoltage[ch1CurrentPWM];                                  /*lookup filter voltage value*/
-    ch1ActualCurrent = ch1Current / 0.25;                                    /*calculate actual current set value (0.5 ohm in parallel)*/
+    ch1ActualCurrent = ch1Current * 4000;                                    /*calculate actual current set value (0.5 ohm in parallel) (x * 1000 / 0.25)*/
   }
   else{
     ch1CurrentPWM = (ch1Current / 1000.0 + 0.008505) / (0.017686);           /*ch1Current is in mA, convert to PWM int value for single channel (2x voltage)*/
     ch1Current = PWMVoltage[ch1CurrentPWM];                                  /*lookup filter voltage value*/
-    ch1ActualCurrent = ch1Current / 0.5;                                    /*calculate actual current set value (0.5 ohm in parallel)*/
+    ch1ActualCurrent = ch1Current * 2000;                                    /*calculate actual current set value (0.5 ohm in parallel) (x * 1000 / 0.5)*/
   }
+  ch1Power = ch1ActualCurrent * ch1Voltage;                                 /*calculate channel power*/
   storeConfigData();                                                                /*if new setpoints are recieved, store them in EEPROM*/
 }
 
 void sendData(){
-    Serial.print(batt1Voltage, 2); Serial.print(":");     
-    Serial.print(ch1DualSelect); Serial.print(":");
-    Serial.print(ch1Current); Serial.print(":");
+    Serial.print(ch1Voltage, 2); Serial.print(":");     
+    Serial.print(ch1ActualCurrent); Serial.print(":");
+    Serial.print(ch1Power); Serial.print(":");
     Serial.println(ch1CurrentPWM);
 }
 
