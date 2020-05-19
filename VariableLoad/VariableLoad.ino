@@ -52,32 +52,54 @@ void setup() {
 
 void loop() {
 
-//  ch1Voltage = analogRead(ch1_Pin);
-//  ch1Voltage = (ch1Voltage * 5.0) / 1023.0;                                       /*convert ch1Voltage from ADC value to Voltage*/
-//  
-//  if(ch1Enable)
-//  {
-//    analogWrite(ch1CurrentSetPin, ch1CurrentPWM);
-//    ch1Power = ch1ActualCurrent * ch1Voltage;                                 /*calculate channel power*/
-//  }
-//  else{                                                                         /*if channel 1 is disabled, set PWM to 0*/
-//    analogWrite(ch1CurrentSetPin, 0);
-//    ch1Power = 0;
-//  }
-
-  channelDrive(ch1CurrentSetPin, ch1CurrentPWM, ch1Enable);
-  ch1Voltage = getChannelVoltage(ch1_Pin);
-  ch1Power = computeChannelPower(ch1ActualCurrent, ch1Enable, ch1Voltage);
+  updateChannels();
   
   if(Serial.available() > 0){                                                         /*if there is data from the serial monitor, recieve it*/
     getData();
     computeSetValues();
   }
-  else                                                                                /*otherwise, send the current data*/
-  {
+  else{                                                                                /*otherwise, send the current data*/
     sendData();    
   }
   delay(100);
+}
+
+void updateChannels(){
+  channelDrive(ch1CurrentSetPin, ch1CurrentPWM, ch1Enable);
+  ch1Voltage = getChannelVoltage(ch1_Pin);
+  ch1Power = computeChannelPower(ch1ActualCurrent, ch1Enable, ch1Voltage);
+}
+
+void computeSetValues(){
+  ch1CurrentPWM = computePWM(ch1Current);
+  ch1ActualCurrent = computeActualCurrent(ch1CurrentPWM, ch1DualSelect);
+  storeConfigData();                                                                /*if new setpoints are recieved, store them in EEPROM*/
+}
+
+void sendData(){
+    Serial.print(ch1Voltage, 2); Serial.print(":");     
+    Serial.print(ch1ActualCurrent); Serial.print(":");
+    Serial.println(ch1Power);
+}
+
+void getData(){      
+    //the incoming data is formatted:     
+    String dataString = Serial.readStringUntil(':');                                  /*parse the string until the seperator '&' is found*/
+    ch1Current = dataString.toInt();                                            /*convert that string into an integar*/
+    dataString = Serial.readStringUntil(':');
+    ch1DualSelect = dataString.toInt();    
+    dataString = Serial.readStringUntil(':');
+    ch1Enable = dataString.toInt();  
+}
+
+void storeConfigData(){
+    EEPROM.put(ch1CurrentAddress, ch1CurrentPWM);                            /*store values in EEPROM*/
+    EEPROM.put(ch1DualSelectAddress, ch1DualSelect);
+}
+
+void getConfigData(){
+    EEPROM.get(ch1CurrentAddress, ch1CurrentPWM);
+    EEPROM.get(ch1DualSelectAddress, ch1DualSelect);
 }
 
 double getChannelVoltage(byte ch_Pin){ 
@@ -106,39 +128,6 @@ double computeChannelPower(unsigned int chActualCurrent, byte chEnable, double c
     chPower = 0;
   }
   return chPower;
-}
-
-void computeSetValues(){
-  ch1CurrentPWM = computePWM(ch1Current);
-  ch1ActualCurrent = computeActualCurrent(ch1CurrentPWM, ch1DualSelect);
-  storeConfigData();                                                                /*if new setpoints are recieved, store them in EEPROM*/
-}
-
-void sendData(){
-    Serial.print(ch1Voltage, 2); Serial.print(":");     
-    Serial.print(ch1ActualCurrent); Serial.print(":");
-    Serial.print(ch1Power); Serial.print(":");
-    Serial.println(ch1CurrentPWM);
-}
-
-void getData(){      
-    //the incoming data is formatted:     
-    String dataString = Serial.readStringUntil(':');                                  /*parse the string until the seperator '&' is found*/
-    ch1Current = dataString.toInt();                                            /*convert that string into an integar*/
-    dataString = Serial.readStringUntil(':');
-    ch1DualSelect = dataString.toInt();    
-    dataString = Serial.readStringUntil(':');
-    ch1Enable = dataString.toInt();  
-}
-
-void storeConfigData(){
-    EEPROM.put(ch1CurrentAddress, ch1CurrentPWM);                            /*store values in EEPROM*/
-    EEPROM.put(ch1DualSelectAddress, ch1DualSelect);
-}
-
-void getConfigData(){
-    EEPROM.get(ch1CurrentAddress, ch1CurrentPWM);
-    EEPROM.get(ch1DualSelectAddress, ch1DualSelect);
 }
 
 byte computePWM(double chCurrent){
